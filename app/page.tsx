@@ -1,44 +1,61 @@
-import Link from "next/link";
-import { AuthButton } from "@/components/auth-button";
+import { CatalogCard } from "@/components/catalog-card";
+import { SiteHeader } from "@/components/site-header";
+import { createClient } from "@/lib/supabase/server";
 
-export default function Home() {
+export default async function Home() {
+  const supabase = await createClient();
+  const [{ data: titles }, { data: items }] = await Promise.all([
+    supabase.from("titles").select("title_id,title_name,origin_type").order("title_name"),
+    supabase.from("items").select("item_id,title_id,item_type,format,price"),
+  ]);
+
+  const safeTitles = titles ?? [];
+  const safeItems = items ?? [];
+
   return (
     <main className="min-h-screen">
-      <header className="border-b">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <Link href="/" className="font-semibold">
-            Loxada Manga / Light Novel
-          </Link>
-          <AuthButton />
-        </div>
-      </header>
-
-      <section className="mx-auto flex min-h-[70vh] max-w-6xl items-center px-6 py-16">
-        <div className="max-w-2xl space-y-5">
-          <p className="text-sm font-medium text-muted-foreground">
-            Manga / Light Novel Subsystem
-          </p>
-          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-            The operational foundation for Loxada&apos;s manga and light novel business.
-          </h1>
-          <p className="text-lg text-muted-foreground">
-            Catalog, reading, purchases, subscriptions, and preorders will be built here.
-          </p>
-          <div className="flex gap-3">
-            <Link
-              href="/auth/login"
-              className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
-            >
-              Sign in
-            </Link>
-            <Link
-              href="/auth/sign-up"
-              className="rounded-md border px-4 py-2 text-sm font-medium"
-            >
-              Create account
-            </Link>
+      <SiteHeader />
+      <section className="border-b">
+        <div className="mx-auto max-w-6xl px-6 py-12">
+          <p className="text-sm font-medium text-muted-foreground">Manga / Light Novel Subsystem</p>
+          <div className="mt-2 max-w-3xl space-y-4">
+            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">Browse the prototype catalog.</h1>
+            <p className="text-lg text-muted-foreground">
+              Browse titles, open an item, save reading progress, simulate a purchase or preorder,
+              and manage a subscription from your workspace.
+            </p>
           </div>
         </div>
+      </section>
+      <section className="mx-auto max-w-6xl px-6 py-10">
+        {safeTitles.length === 0 ? (
+          <div className="rounded-lg border border-dashed p-10 text-center text-sm text-muted-foreground">
+            The prototype catalog is empty.
+          </div>
+        ) : (
+          <div className="grid gap-5 md:grid-cols-2">
+            {safeTitles.map((title) => {
+              const titleItems = safeItems.filter((item) => item.title_id === title.title_id);
+              const minPrice = titleItems.reduce((value: number | null, item) => {
+                if (item.price == null) return value;
+                const price = Number(item.price);
+                return value == null ? price : Math.min(value, price);
+              }, null);
+              return (
+                <CatalogCard
+                  key={title.title_id}
+                  titleId={title.title_id}
+                  titleName={title.title_name}
+                  originType={title.origin_type}
+                  itemCount={titleItems.length}
+                  itemTypes={[...new Set(titleItems.map((item) => item.item_type).filter(Boolean))] as string[]}
+                  formats={[...new Set(titleItems.map((item) => item.format).filter(Boolean))] as string[]}
+                  minPrice={minPrice}
+                />
+              );
+            })}
+          </div>
+        )}
       </section>
     </main>
   );
