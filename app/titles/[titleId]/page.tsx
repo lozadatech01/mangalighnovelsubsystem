@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -9,7 +10,7 @@ type PageProps = {
   params: Promise<{ titleId: string }>;
 };
 
-export default async function TitlePage({ params }: PageProps) {
+async function TitleContent({ params }: PageProps) {
   const { titleId } = await params;
   const supabase = await createClient();
 
@@ -32,7 +33,8 @@ export default async function TitlePage({ params }: PageProps) {
     notFound();
   }
 
-  const arcIds = [...new Set((items ?? []).map((item) => item.arc_id).filter(Boolean))];
+  const safeItems = items ?? [];
+  const arcIds = [...new Set(safeItems.map((item) => item.arc_id).filter(Boolean))];
   const { data: arcs } = arcIds.length
     ? await supabase
         .from("arcs")
@@ -41,66 +43,90 @@ export default async function TitlePage({ params }: PageProps) {
         .order("sequence_order")
     : { data: [] };
 
-  const arcName = new Map((arcs ?? []).map((arc) => [arc.arc_id, arc.arc_name]));
+  const arcName = new Map(
+    (arcs ?? []).map(
+      (arc): [string, string | null] => [arc.arc_id, arc.arc_name],
+    ),
+  );
 
+  return (
+    <section className="mx-auto max-w-6xl px-6 py-10">
+      <Link href="/" className="text-sm text-muted-foreground hover:text-foreground">
+        ← Back to catalog
+      </Link>
+
+      <div className="mt-6 space-y-3">
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <span className="rounded-full border px-2 py-1">
+            {title.origin_type ?? "catalog"}
+          </span>
+          <span className="rounded-full bg-secondary px-2 py-1">
+            {safeItems.length} items
+          </span>
+        </div>
+        <h1 className="text-4xl font-bold tracking-tight">{title.title_name}</h1>
+        <p className="max-w-2xl text-muted-foreground">
+          Explore chapters or volumes in this prototype catalog.
+        </p>
+      </div>
+
+      <div className="mt-10 grid gap-4">
+        {safeItems.map((item) => (
+          <Link key={item.item_id} href={`/items/${item.item_id}`}>
+            <Card className="transition hover:border-foreground/30">
+              <CardHeader className="pb-3">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <CardTitle className="text-lg">
+                    {item.item_type === "light_novel" ? "Volume" : "Chapter"}{" "}
+                    {item.chapter_or_volume_number ?? "—"}
+                  </CardTitle>
+                  <div className="flex gap-2 text-xs">
+                    {item.is_free_preview ? (
+                      <span className="rounded-full bg-secondary px-2 py-1">
+                        Free preview
+                      </span>
+                    ) : null}
+                    <span className="rounded-full border px-2 py-1">{item.format}</span>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="flex flex-wrap items-center justify-between gap-3 text-sm">
+                <div className="text-muted-foreground">
+                  {item.arc_id ? arcName.get(item.arc_id) ?? "Unassigned arc" : "No arc"}
+                  {" · "}
+                  Released {item.release_date ?? "TBD"}
+                </div>
+                <div className="font-semibold">
+                  {item.price == null ? "Free" : `₱${Number(item.price).toFixed(2)}`}
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+export default function TitlePage({ params }: PageProps) {
   return (
     <main className="min-h-screen">
       <SiteHeader />
-      <section className="mx-auto max-w-6xl px-6 py-10">
-        <Link href="/" className="text-sm text-muted-foreground hover:text-foreground">
-          ← Back to catalog
-        </Link>
-
-        <div className="mt-6 space-y-3">
-          <div className="flex flex-wrap items-center gap-2 text-xs">
-            <span className="rounded-full border px-2 py-1">
-              {title.origin_type ?? "catalog"}
-            </span>
-            <span className="rounded-full bg-secondary px-2 py-1">
-              {(items ?? []).length} items
-            </span>
-          </div>
-          <h1 className="text-4xl font-bold tracking-tight">{title.title_name}</h1>
-          <p className="max-w-2xl text-muted-foreground">
-            Explore chapters or volumes in this prototype catalog.
-          </p>
-        </div>
-
-        <div className="mt-10 grid gap-4">
-          {(items ?? []).map((item) => (
-            <Link key={item.item_id} href={`/items/${item.item_id}`}>
-              <Card className="transition hover:border-foreground/30">
-                <CardHeader className="pb-3">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <CardTitle className="text-lg">
-                      {item.item_type === "light_novel" ? "Volume" : "Chapter"}{" "}
-                      {item.chapter_or_volume_number ?? "—"}
-                    </CardTitle>
-                    <div className="flex gap-2 text-xs">
-                      {item.is_free_preview ? (
-                        <span className="rounded-full bg-secondary px-2 py-1">
-                          Free preview
-                        </span>
-                      ) : null}
-                      <span className="rounded-full border px-2 py-1">{item.format}</span>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="flex flex-wrap items-center justify-between gap-3 text-sm">
-                  <div className="text-muted-foreground">
-                    {item.arc_id ? arcName.get(item.arc_id) ?? "Unassigned arc" : "No arc"}
-                    {" · "}
-                    Released {item.release_date ?? "TBD"}
-                  </div>
-                  <div className="font-semibold">
-                    {item.price == null ? "Free" : `₱${Number(item.price).toFixed(2)}`}
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
-        </div>
-      </section>
+      <Suspense
+        fallback={
+          <section className="mx-auto max-w-6xl px-6 py-10">
+            <div className="h-4 w-32 animate-pulse rounded bg-secondary" />
+            <div className="mt-8 h-12 max-w-xl animate-pulse rounded bg-secondary" />
+            <div className="mt-6 grid gap-4">
+              {[0, 1, 2].map((index) => (
+                <div key={index} className="h-28 animate-pulse rounded-lg border" />
+              ))}
+            </div>
+          </section>
+        }
+      >
+        <TitleContent params={params} />
+      </Suspense>
     </main>
   );
 }
