@@ -13,21 +13,30 @@ export default async function ProtectedPage({ searchParams }: PageProps) {
   const query = await searchParams;
   const supabase = await createClient();
 
-  const [{ data: purchases }, { data: subscriptions }, { data: preorders }, { data: progress }] =
-    await Promise.all([
-      supabase.from("purchases").select("purchase_id,purchased_at,price_paid,purchase_type,item_id").order("purchased_at", { ascending: false }),
-      supabase.from("subscriptions").select("subscription_id,started_at,ended_at,tier,price").order("started_at", { ascending: false }),
-      supabase.from("preorders").select("preorder_id,preordered_at,status,price_at_preorder,item_id").order("preordered_at", { ascending: false }),
-      supabase.from("reading_progress").select("reading_progress_id,item_id,progress_pct,completed_at,last_accessed_at").order("last_accessed_at", { ascending: false }),
-    ]);
+  const [
+    { data: purchasesData },
+    { data: subscriptionsData },
+    { data: preordersData },
+    { data: progressData },
+  ] = await Promise.all([
+    supabase.from("purchases").select("purchase_id,purchased_at,price_paid,purchase_type,item_id").order("purchased_at", { ascending: false }),
+    supabase.from("subscriptions").select("subscription_id,started_at,ended_at,tier,price").order("started_at", { ascending: false }),
+    supabase.from("preorders").select("preorder_id,preordered_at,status,price_at_preorder,item_id").order("preordered_at", { ascending: false }),
+    supabase.from("reading_progress").select("reading_progress_id,item_id,progress_pct,completed_at,last_accessed_at").order("last_accessed_at", { ascending: false }),
+  ]);
 
-  const purchaseTotal = (purchases ?? []).reduce((total, purchase) => total + Number(purchase.price_paid ?? 0), 0);
-  const activeSubscriptions = (subscriptions ?? []).filter((subscription) => !subscription.ended_at).length;
-  const completedItems = (progress ?? []).filter((item) => Number(item.progress_pct ?? 0) >= 100).length;
+  const purchases = purchasesData ?? [];
+  const subscriptions = subscriptionsData ?? [];
+  const preorders = preordersData ?? [];
+  const progress = progressData ?? [];
+
+  const purchaseTotal = purchases.reduce((total, purchase) => total + Number(purchase.price_paid ?? 0), 0);
+  const activeSubscriptions = subscriptions.filter((subscription) => !subscription.ended_at).length;
+  const completedItems = progress.filter((item) => Number(item.progress_pct ?? 0) >= 100).length;
 
   const recentItemIds = [...new Set([
-    ...(progress ?? []).slice(0, 5).map((item) => item.item_id),
-    ...(purchases ?? []).slice(0, 5).map((item) => item.item_id),
+    ...progress.slice(0, 5).map((item) => item.item_id),
+    ...purchases.slice(0, 5).map((item) => item.item_id),
   ])];
 
   const { data: recentItems } = recentItemIds.length
@@ -57,7 +66,7 @@ export default async function ProtectedPage({ searchParams }: PageProps) {
 
         <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[
-            ["Purchases", purchases?.length ?? 0],
+            ["Purchases", purchases.length],
             ["Spent", `₱${purchaseTotal.toFixed(2)}`],
             ["Active plans", activeSubscriptions],
             ["Completed", completedItems],
@@ -94,7 +103,7 @@ export default async function ProtectedPage({ searchParams }: PageProps) {
           <Card>
             <CardHeader><CardTitle>Reading activity</CardTitle></CardHeader>
             <CardContent className="space-y-3">
-              {(progress ?? []).length === 0 ? (
+              {progress.length === 0 ? (
                 <p className="text-sm text-muted-foreground">Open an item and save progress to see it here.</p>
               ) : (
                 progress.slice(0, 6).map((item) => (
@@ -110,7 +119,7 @@ export default async function ProtectedPage({ searchParams }: PageProps) {
           <Card>
             <CardHeader><CardTitle>Purchase history</CardTitle></CardHeader>
             <CardContent className="space-y-2">
-              {(purchases ?? []).length === 0 ? (
+              {purchases.length === 0 ? (
                 <p className="text-sm text-muted-foreground">Simulate a purchase from any item page.</p>
               ) : (
                 purchases.slice(0, 5).map((purchase) => (
@@ -128,7 +137,7 @@ export default async function ProtectedPage({ searchParams }: PageProps) {
           <Card>
             <CardHeader><CardTitle>Preorders</CardTitle></CardHeader>
             <CardContent className="space-y-2">
-              {(preorders ?? []).length === 0 ? (
+              {preorders.length === 0 ? (
                 <p className="text-sm text-muted-foreground">Open a physical item and simulate a preorder.</p>
               ) : (
                 preorders.slice(0, 5).map((preorder) => (
