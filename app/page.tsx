@@ -1,58 +1,45 @@
-import { DeployButton } from "@/components/deploy-button";
-import { EnvVarWarning } from "@/components/env-var-warning";
-import { AuthButton } from "@/components/auth-button";
-import { Hero } from "@/components/hero";
-import { ThemeSwitcher } from "@/components/theme-switcher";
-import { ConnectSupabaseSteps } from "@/components/tutorial/connect-supabase-steps";
-import { SignUpUserSteps } from "@/components/tutorial/sign-up-user-steps";
-import { hasEnvVars } from "@/lib/utils";
 import Link from "next/link";
-import { Suspense } from "react";
+import { AuthButton } from "@/components/auth-button";
 
 export default function Home() {
   return (
-    <main className="min-h-screen flex flex-col items-center">
-      <div className="flex-1 w-full flex flex-col gap-20 items-center">
-        <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16">
-          <div className="w-full max-w-5xl flex justify-between items-center p-3 px-5 text-sm">
-            <div className="flex gap-5 items-center font-semibold">
-              <Link href={"/"}>Next.js Supabase Starter</Link>
-              <div className="flex items-center gap-2">
-                <DeployButton />
-              </div>
-            </div>
-            {!hasEnvVars ? (
-              <EnvVarWarning />
-            ) : (
-              <Suspense>
-                <AuthButton />
-              </Suspense>
-            )}
-          </div>
-        </nav>
-        <div className="flex-1 flex flex-col gap-20 max-w-5xl p-5">
-          <Hero />
-          <main className="flex-1 flex flex-col gap-6 px-4">
-            <h2 className="font-medium text-xl mb-4">Next steps</h2>
-            {hasEnvVars ? <SignUpUserSteps /> : <ConnectSupabaseSteps />}
-          </main>
+    <main className="min-h-screen">
+      <header className="border-b">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+          <Link href="/" className="font-semibold">
+            Loxada Manga / Light Novel
+          </Link>
+          <AuthButton />
         </div>
+      </header>
 
-        <footer className="w-full flex items-center justify-center border-t mx-auto text-center text-xs gap-8 py-16">
-          <p>
-            Powered by{" "}
-            <a
-              href="https://supabase.com/?utm_source=create-next-app&utm_medium=template&utm_term=nextjs"
-              target="_blank"
-              className="font-bold hover:underline"
-              rel="noreferrer"
-            >
-              Supabase
-            </a>
+      <section className="mx-auto flex min-h-[70vh] max-w-6xl items-center px-6 py-16">
+        <div className="max-w-2xl space-y-5">
+          <p className="text-sm font-medium text-muted-foreground">
+            Manga / Light Novel Subsystem
           </p>
-          <ThemeSwitcher />
-        </footer>
-      </div>
+          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
+            The operational foundation for Loxada&apos;s manga and light novel business.
+          </h1>
+          <p className="text-lg text-muted-foreground">
+            Catalog, reading, purchases, subscriptions, and preorders will be built here.
+          </p>
+          <div className="flex gap-3">
+            <Link
+              href="/auth/login"
+              className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+            >
+              Sign in
+            </Link>
+            <Link
+              href="/auth/sign-up"
+              className="rounded-md border px-4 py-2 text-sm font-medium"
+            >
+              Create account
+            </Link>
+          </div>
+        </div>
+      </section>
     </main>
   );
 }
