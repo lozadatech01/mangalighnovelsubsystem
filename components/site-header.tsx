@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { AuthButton } from "@/components/auth-button";
 
@@ -18,7 +19,16 @@ export function SiteHeader() {
             </Link>
           </nav>
         </div>
-        <AuthButton />
+        <Suspense
+          fallback={
+            <div className="flex gap-2">
+              <div className="h-9 w-20 animate-pulse rounded-md bg-secondary" />
+              <div className="h-9 w-20 animate-pulse rounded-md bg-secondary" />
+            </div>
+          }
+        >
+          <AuthButton />
+        </Suspense>
       </div>
     </header>
   );
