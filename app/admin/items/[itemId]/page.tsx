@@ -18,7 +18,7 @@ async function ItemEditor({ params, searchParams }: PageProps) {
   const { data: item } = await supabase
     .from("items")
     .select(
-      "item_id,title_id,item_type,chapter_or_volume_number,format,price,is_free_preview,release_date,stock_quantity,status,published_at,content_path",
+      "item_id,title_id,arc_id,item_type,chapter_or_volume_number,format,price,is_free_preview,release_date,stock_quantity,status,published_at,content_path",
     )
     .eq("item_id", itemId)
     .maybeSingle();
