@@ -246,11 +246,17 @@ async function TitleEditor({ params, searchParams }: PageProps) {
             <h2 className="text-lg font-semibold">Cover</h2>
             <div className="mt-4 overflow-hidden rounded-md border bg-secondary/30">
               {coverUrl ? (
-                <a href={coverUrl} target="_blank" rel="noreferrer" className="block p-4 text-sm hover:underline">
-                  Open current cover
+                <a href={coverUrl} target="_blank" rel="noreferrer" className="block">
+                  <img
+                    src={coverUrl}
+                    alt={title.title_name + " cover"}
+                    className="aspect-[2/3] w-full object-cover"
+                  />
                 </a>
               ) : (
-                <p className="p-6 text-sm text-muted-foreground">No cover uploaded.</p>
+                <div className="flex aspect-[2/3] items-center justify-center p-6 text-center text-sm text-muted-foreground">
+                  No cover uploaded.
+                </div>
               )}
             </div>
             <form action={uploadTitleCover} encType="multipart/form-data" className="mt-4 space-y-3">
@@ -268,8 +274,20 @@ async function TitleEditor({ params, searchParams }: PageProps) {
 
           <div className="rounded-lg border p-6">
             <h2 className="text-lg font-semibold">Publishing</h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-              A title is visible publicly only when its status is published. Individual items are also required to be published.
+            <div className="mt-3 rounded-md bg-secondary/40 p-4 text-sm">
+              <p className="font-medium">Publication checklist</p>
+              <ul className="mt-2 space-y-1 text-muted-foreground">
+                <li className={title.cover_image_path ? "text-foreground" : ""}>{title.cover_image_path ? "✓" : "•"} Cover {title.cover_image_path ? "added" : "optional"}</li>
+                <li className={(items ?? []).some((item) => item.status === "published") ? "text-foreground" : ""}>
+                  {(items ?? []).some((item) => item.status === "published") ? "✓" : "•"} At least one published chapter or volume
+                </li>
+                <li className={title.status === "published" ? "text-foreground" : ""}>
+                  {title.status === "published" ? "✓" : "•"} Title status is published
+                </li>
+              </ul>
+            </div>
+            <p className="mt-3 text-sm text-muted-foreground">
+              Publish at least one chapter or volume before changing this title to Published. A cover is recommended but not required.
             </p>
             <form action={archiveTitle} className="mt-4">
               <input type="hidden" name="title_id" value={title.title_id} />
