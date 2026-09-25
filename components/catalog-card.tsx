@@ -5,6 +5,7 @@ type CatalogCardProps = {
   titleId: string;
   titleName: string;
   originType: string | null;
+  description: string | null;
   itemCount: number;
   itemTypes: string[];
   formats: string[];
@@ -15,6 +16,7 @@ export function CatalogCard({
   titleId,
   titleName,
   originType,
+  description,
   itemCount,
   itemTypes,
   formats,
@@ -33,6 +35,7 @@ export function CatalogCard({
             </span>
           </div>
           <CardTitle>{titleName}</CardTitle>
+          {description ? <p className="line-clamp-3 text-sm text-muted-foreground">{description}</p> : null}
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex flex-wrap gap-2 text-xs">
