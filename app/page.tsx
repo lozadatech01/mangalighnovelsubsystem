@@ -16,7 +16,7 @@ async function HomeCatalog() {
 
   return safeTitles.length === 0 ? (
     <div className="rounded-lg border border-dashed p-10 text-center text-sm text-muted-foreground">
-      The prototype catalog is empty.
+      No titles have been published yet.
     </div>
   ) : (
     <div className="grid gap-5 md:grid-cols-2">
@@ -53,10 +53,9 @@ export default function Home() {
         <div className="mx-auto max-w-6xl px-6 py-12">
           <p className="text-sm font-medium text-muted-foreground">Manga / Light Novel Subsystem</p>
           <div className="mt-2 max-w-3xl space-y-4">
-            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">Browse the prototype catalog.</h1>
+            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">Browse the catalog.</h1>
             <p className="text-lg text-muted-foreground">
-              Browse titles, open an item, save reading progress, simulate a purchase or preorder,
-              and manage a subscription from your workspace.
+              Browse published manga and light novel titles. Sign in to access your account workspace.
             </p>
           </div>
         </div>
