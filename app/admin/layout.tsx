@@ -1,8 +1,8 @@
 import { Suspense } from "react";
 
 import { requireAdmin } from "@/lib/auth/admin";
+import { AdminHeader } from "@/components/admin-header";
 import { AdminNav } from "@/components/admin-nav";
-import { SiteHeader } from "@/components/site-header";
 
 async function AdminGate({ children }: { children: React.ReactNode }) {
   await requireAdmin();
@@ -25,7 +25,7 @@ export default function AdminLayout({
       }
     >
       <AdminGate>
-        <SiteHeader />
+        <AdminHeader />
         <AdminNav />
         {children}
       </AdminGate>
