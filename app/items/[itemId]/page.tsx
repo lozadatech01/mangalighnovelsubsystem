@@ -17,20 +17,22 @@ async function ItemContent({ params }: PageProps) {
   const { data: item } = await supabase
     .from("items")
     .select(
-      "item_id,title_id,item_type,chapter_or_volume_number,format,price,is_free_preview,release_date,stock_quantity",
+      "item_id,title_id,item_type,chapter_or_volume_number,format,price,is_free_preview,release_date,stock_quantity,status",
     )
     .eq("item_id", itemId)
+    .eq("status", "published")
     .maybeSingle();
 
-  if (!item) {
-    notFound();
-  }
+  if (!item) notFound();
 
   const { data: title } = await supabase
     .from("titles")
-    .select("title_name")
+    .select("title_name,status")
     .eq("title_id", item.title_id)
+    .eq("status", "published")
     .maybeSingle();
+
+  if (!title) notFound();
 
   return (
     <section className="mx-auto max-w-6xl px-6 py-10">
@@ -38,7 +40,7 @@ async function ItemContent({ params }: PageProps) {
         href={`/titles/${item.title_id}`}
         className="text-sm text-muted-foreground hover:text-foreground"
       >
-        ← Back to {title?.title_name ?? "catalog"}
+        ← Back to {title.title_name}
       </Link>
 
       <div className="mt-6 grid gap-8 lg:grid-cols-[1.4fr_0.6fr]">
@@ -56,7 +58,7 @@ async function ItemContent({ params }: PageProps) {
               {item.item_type === "light_novel" ? "Volume" : "Chapter"}{" "}
               {item.chapter_or_volume_number ?? "—"}
             </h1>
-            <p className="text-muted-foreground">{title?.title_name ?? "Title"}</p>
+            <p className="text-muted-foreground">{title.title_name}</p>
           </div>
 
           <Card>
