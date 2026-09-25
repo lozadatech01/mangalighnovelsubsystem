@@ -7,8 +7,15 @@ import { createClient } from "@/lib/supabase/server";
 async function HomeCatalog() {
   const supabase = await createClient();
   const [{ data: titles }, { data: items }] = await Promise.all([
-    supabase.from("titles").select("title_id,title_name,origin_type").order("title_name"),
-    supabase.from("items").select("item_id,title_id,item_type,format,price"),
+    supabase
+      .from("titles")
+      .select("title_id,title_name,origin_type,description")
+      .eq("status", "published")
+      .order("title_name"),
+    supabase
+      .from("items")
+      .select("item_id,title_id,item_type,format,price")
+      .eq("status", "published"),
   ]);
 
   const safeTitles = titles ?? [];
@@ -34,6 +41,7 @@ async function HomeCatalog() {
             titleId={title.title_id}
             titleName={title.title_name}
             originType={title.origin_type}
+            description={title.description}
             itemCount={titleItems.length}
             itemTypes={[...new Set(titleItems.map((item) => item.item_type).filter(Boolean))] as string[]}
             formats={[...new Set(titleItems.map((item) => item.format).filter(Boolean))] as string[]}
