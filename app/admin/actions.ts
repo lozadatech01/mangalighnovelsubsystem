@@ -42,6 +42,18 @@ function success(path: string, message: string): never {
   redirect(`${path}?notice=${encodeURIComponent(message)}`);
 }
 
+function validateCover(file: FormDataEntryValue | null, path: string): file is File {
+  if (!(file instanceof File) || file.size === 0) return false;
+  if (!file.type.startsWith("image/")) fail(path, "Cover must be an image.");
+  if (file.size > 900_000) fail(path, "Cover image must be smaller than 900 KB.");
+  return true;
+}
+
+function coverExtension(file: File) {
+  const extension = file.name.includes(".") ? file.name.split(".").pop()?.toLowerCase() : "jpg";
+  return extension || "jpg";
+}
+
 function revalidateCatalog(titleId?: string) {
   revalidatePath("/");
   revalidatePath("/admin");
@@ -58,12 +70,20 @@ export async function createTitle(formData: FormData) {
   const titleName = value(formData, "title_name");
   const originType = value(formData, "origin_type");
   const description = value(formData, "description");
+  const cover = formData.get("cover");
+  const path = "/admin/titles/new";
 
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(titleId)) {
-    fail("/admin/titles/new", "Title ID must be a lowercase kebab-case slug.");
+    fail(path, "Title ID must be a lowercase kebab-case slug.");
   }
-  if (!titleName) fail("/admin/titles/new", "Title name is required.");
-  if (!originTypes.has(originType)) fail("/admin/titles/new", "Choose a valid origin type.");
+  if (!titleName) fail(path, "Title name is required.");
+  if (titleName.length > 200) fail(path, "Title name must be 200 characters or fewer.");
+  if (description.length > 5000) fail(path, "Description must be 5,000 characters or fewer.");
+  if (!originTypes.has(originType)) fail(path, "Choose a valid origin type.");
+
+  if (cover instanceof File && cover.size > 0) {
+    validateCover(cover, path);
+  }
 
   const { error } = await supabase.from("titles").insert({
     title_id: titleId,
@@ -74,7 +94,37 @@ export async function createTitle(formData: FormData) {
   });
 
   if (error) {
-    fail("/admin/titles/new", error.code === "23505" ? "That title ID already exists." : "Unable to create title.");
+    fail(path, error.code === "23505" ? "That title ID already exists." : "Unable to create title.");
+  }
+
+  if (cover instanceof File && cover.size > 0) {
+    const objectPath = `titles/${titleId}/cover-${crypto.randomUUID()}.${coverExtension(cover)}`;
+    const { error: uploadError } = await supabase.storage
+      .from("manga-ln-assets")
+      .upload(objectPath, cover, {
+        contentType: cover.type,
+        upsert: false,
+        cacheControl: "3600",
+      });
+
+    if (uploadError) {
+      await supabase.from("titles").delete().eq("title_id", titleId);
+      fail(path, "Title was not created because the cover could not be uploaded.");
+    }
+
+    const { error: coverLinkError } = await supabase
+      .from("titles")
+      .update({
+        cover_image_path: objectPath,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("title_id", titleId);
+
+    if (coverLinkError) {
+      await supabase.storage.from("manga-ln-assets").remove([objectPath]);
+      await supabase.from("titles").delete().eq("title_id", titleId);
+      fail(path, "Title was not created because the cover could not be linked.");
+    }
   }
 
   revalidateCatalog();
@@ -92,6 +142,8 @@ export async function updateTitle(formData: FormData) {
   const path = `/admin/titles/${encodeURIComponent(titleId)}`;
 
   if (!titleId || !titleName) fail(path, "Title ID and title name are required.");
+  if (titleName.length > 200) fail(path, "Title name must be 200 characters or fewer.");
+  if (description.length > 5000) fail(path, "Description must be 5,000 characters or fewer.");
   if (!originTypes.has(originType)) fail(path, "Choose a valid origin type.");
   if (!titleStatuses.has(status)) fail(path, "Choose a valid status.");
 
@@ -102,6 +154,18 @@ export async function updateTitle(formData: FormData) {
     .maybeSingle();
 
   if (!existing) fail("/admin/titles", "Title not found.");
+
+  if (status === "published") {
+    const { count: publishedItemCount } = await supabase
+      .from("items")
+      .select("item_id", { count: "exact", head: true })
+      .eq("title_id", titleId)
+      .eq("status", "published");
+
+    if ((publishedItemCount ?? 0) === 0) {
+      fail(path, "Publish at least one chapter or volume before publishing the title.");
+    }
+  }
 
   const nextPublishedAt =
     status === "published"
@@ -423,11 +487,9 @@ export async function uploadTitleCover(formData: FormData) {
   if (!titleId || !(file instanceof File) || file.size === 0) {
     fail(path, "Choose an image to upload.");
   }
-  if (!file.type.startsWith("image/")) fail(path, "Cover must be an image.");
-  if (file.size > 900_000) fail(path, "Cover image must be smaller than 900 KB.");
+  validateCover(file, path);
 
-  const extension = file.name.includes(".") ? file.name.split(".").pop()?.toLowerCase() : "jpg";
-  const objectPath = `titles/${titleId}/cover-${crypto.randomUUID()}.${extension || "jpg"}`;
+  const objectPath = `titles/${titleId}/cover-${crypto.randomUUID()}.${coverExtension(file)}`;
 
   const { error: uploadError } = await supabase.storage
     .from("manga-ln-assets")
