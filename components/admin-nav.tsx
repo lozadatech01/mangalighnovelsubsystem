@@ -10,9 +10,6 @@ export function AdminNav() {
         <Link href="/admin/titles" className="hover:underline">
           Titles
         </Link>
-        <Link href="/" className="text-muted-foreground hover:text-foreground">
-          Public catalog
-        </Link>
       </div>
     </nav>
   );
