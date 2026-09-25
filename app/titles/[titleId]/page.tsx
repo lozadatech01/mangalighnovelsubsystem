@@ -66,43 +66,49 @@ async function TitleContent({ params }: PageProps) {
         </div>
         <h1 className="text-4xl font-bold tracking-tight">{title.title_name}</h1>
         <p className="max-w-2xl text-muted-foreground">
-          Explore chapters or volumes in this prototype catalog.
+          Published chapters and volumes for this title.
         </p>
       </div>
 
       <div className="mt-10 grid gap-4">
-        {safeItems.map((item) => (
-          <Link key={item.item_id} href={`/items/${item.item_id}`}>
-            <Card className="transition hover:border-foreground/30">
-              <CardHeader className="pb-3">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <CardTitle className="text-lg">
-                    {item.item_type === "light_novel" ? "Volume" : "Chapter"}{" "}
-                    {item.chapter_or_volume_number ?? "—"}
-                  </CardTitle>
-                  <div className="flex gap-2 text-xs">
-                    {item.is_free_preview ? (
-                      <span className="rounded-full bg-secondary px-2 py-1">
-                        Free preview
-                      </span>
-                    ) : null}
-                    <span className="rounded-full border px-2 py-1">{item.format}</span>
+        {safeItems.length === 0 ? (
+          <div className="rounded-lg border border-dashed p-10 text-center text-sm text-muted-foreground">
+            No items have been published for this title yet.
+          </div>
+        ) : (
+          safeItems.map((item) => (
+            <Link key={item.item_id} href={`/items/${item.item_id}`}>
+              <Card className="transition hover:border-foreground/30">
+                <CardHeader className="pb-3">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <CardTitle className="text-lg">
+                      {item.item_type === "light_novel" ? "Volume" : "Chapter"}{" "}
+                      {item.chapter_or_volume_number ?? "—"}
+                    </CardTitle>
+                    <div className="flex gap-2 text-xs">
+                      {item.is_free_preview ? (
+                        <span className="rounded-full bg-secondary px-2 py-1">
+                          Free preview
+                        </span>
+                      ) : null}
+                      <span className="rounded-full border px-2 py-1">{item.format}</span>
+                    </div>
                   </div>
-                </div>
-              </CardHeader>
-              <CardContent className="flex flex-wrap items-center justify-between gap-3 text-sm">
-                <div className="text-muted-foreground">
-                  {item.arc_id ? arcName.get(item.arc_id) ?? "Unassigned arc" : "No arc"}
-                  {" · "}
-                  Released {item.release_date ?? "TBD"}
-                </div>
-                <div className="font-semibold">
-                  {item.price == null ? "Free" : `₱${Number(item.price).toFixed(2)}`}
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
-        ))}
+                </CardHeader>
+                <CardContent className="flex flex-wrap items-center justify-between gap-3 text-sm">
+                  <div className="text-muted-foreground">
+                    {item.arc_id ? arcName.get(item.arc_id) ?? "Unassigned arc" : "No arc"}
+                    {" · "}
+                    Released {item.release_date ?? "Not scheduled"}
+                  </div>
+                  <div className="font-semibold">
+                    {item.price == null ? "Free" : `₱${Number(item.price).toFixed(2)}`}
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+          ))
+        )}
       </div>
     </section>
   );
