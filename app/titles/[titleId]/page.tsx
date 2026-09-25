@@ -17,21 +17,21 @@ async function TitleContent({ params }: PageProps) {
   const [{ data: title }, { data: items }] = await Promise.all([
     supabase
       .from("titles")
-      .select("title_id,title_name,origin_type")
+      .select("title_id,title_name,origin_type,description,status,published_at")
       .eq("title_id", titleId)
+      .eq("status", "published")
       .maybeSingle(),
     supabase
       .from("items")
       .select(
-        "item_id,item_type,chapter_or_volume_number,format,price,is_free_preview,release_date,stock_quantity,arc_id",
+        "item_id,item_type,chapter_or_volume_number,format,price,is_free_preview,release_date,stock_quantity,arc_id,status,published_at",
       )
       .eq("title_id", titleId)
+      .eq("status", "published")
       .order("chapter_or_volume_number"),
   ]);
 
-  if (!title) {
-    notFound();
-  }
+  if (!title) notFound();
 
   const safeItems = items ?? [];
   const arcIds = [...new Set(safeItems.map((item) => item.arc_id).filter(Boolean))];
@@ -61,13 +61,13 @@ async function TitleContent({ params }: PageProps) {
             {title.origin_type ?? "catalog"}
           </span>
           <span className="rounded-full bg-secondary px-2 py-1">
-            {safeItems.length} items
+            {safeItems.length} published {safeItems.length === 1 ? "item" : "items"}
           </span>
         </div>
         <h1 className="text-4xl font-bold tracking-tight">{title.title_name}</h1>
-        <p className="max-w-2xl text-muted-foreground">
-          Published chapters and volumes for this title.
-        </p>
+        {title.description ? (
+          <p className="max-w-2xl whitespace-pre-wrap text-muted-foreground">{title.description}</p>
+        ) : null}
       </div>
 
       <div className="mt-10 grid gap-4">
