@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { type NextRequest } from "next/server";
 
 function safeRedirect(path: string | null) {
-  if (!path || !path.startsWith("/") || path.startsWith("//")) {
+  if (!path || !path.startsWith("/") || path.startsWith("//") || path.includes(String.fromCharCode(92))) {
     return "/";
   }
 

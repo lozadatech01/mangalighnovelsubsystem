@@ -1,96 +1,27 @@
-# Manga / Light Novel Subsystem
+# LOXADA Manga / Light Novel
 
-The Manga / Light Novel subsystem is one department application in the Loxada Entertainments platform.
+Clean Next.js / Tailwind / Supabase Auth starter. Business features are intentionally absent. No demo accounts, records, metrics, catalogs or business database migrations are included.
 
-## Stack
+## Run
 
-- Next.js App Router
-- React
-- Tailwind CSS
-- Supabase Auth + Postgres
-- Supabase Storage
-- Vercel
-- GitHub
+Use Node.js 22 or newer. Run `npm ci`, copy `.env.example` to `.env.local`, and supply this application's actual Supabase URL and publishable key. Never commit secrets or expose a service-role key.
 
-## Project responsibilities
+- `npm run dev`: local development
+- `npm run lint`: ESLint
+- `npm run typecheck`: TypeScript
+- `npm run build`: production build
+- `npm start`: serve the production build
 
-The application is the operational user/admin interface for the Manga / Light Novel subsystem.
+The landing page and authentication forms render without environment values. Authentication requires a configured, available Supabase project and valid redirect settings. Authentication plumbing is retained; department roles, Superadmin authorization and business RLS are not implemented by this starter. Registration never grants an administrative role.
 
-Supabase is split into:
+Routes: `/`, `/auth/login`, `/auth/sign-up`, `/auth/forgot-password`, `/auth/update-password`, `/protected` (requires authentication).
 
-- `public`: OLTP operational tables
-- `mart`: analytical views used by reporting and ETL
-- Storage: department data lake
+## Recovery
 
-The central Business Intelligence system will consume the subsystem's ETL-oriented marts rather than querying the OLTP tables directly.
+Cleanup starts from `7da48aa52767e5221428bc7d589870fc22b62ef0` and preserves it at [the backup branch](https://github.com/lozadatech01/mangalighnovelsubsystem/tree/backup/before-template-cleanup-20261028-1793220498599). All original commits remain in history. The blank foundation adapts the previously cleaned starter at `lozadatech01/mangalighnovelsubsystem@c5c60060724dcfac15775c3be9e7fe44bf91defa`, itself derived from the same Vercel Supabase starter used by these four repos.
 
-## Public catalog
+Restore committed files through a reviewed revert/restoration commit. Do not force-push or reset remote history.
 
-The public catalog only exposes records whose publication status is `published`.
+This cleanup changes repository files only. It does not reset Supabase schemas, data, Auth users, migration history, project settings or Vercel environment variables. Historical business migrations remain recoverable in the backup/history; reconcile the real database before adding or applying new migrations. A successful local build does not verify live database connectivity, authentication or deployment health.
 
-- `/` — published titles
-- `/titles/[titleId]` — published title and published items
-- `/items/[itemId]` — published item details
-- `/auth/login` — sign in
-- `/auth/sign-up` — create an account
-- `/protected` — authenticated account workspace
-
-An empty catalog is valid until an administrator publishes content.
-
-## Admin catalog management
-
-The admin interface is part of the same deployment under `/admin`.
-
-Admin access requires the authenticated user's Supabase Auth `app_metadata.role` to equal `admin`. Authorization is enforced both in the Next.js route/action layer and in Postgres RLS policies.
-
-Admin routes include:
-
-- `/admin` — dashboard
-- `/admin/titles` — title list and publication filters
-- `/admin/titles/new` — create a title
-- `/admin/titles/[titleId]` — edit title metadata, cover, arcs, and items
-- `/admin/items/[itemId]` — edit item metadata and content path
-
-### Publishing lifecycle
-
-Titles and items use:
-
-`draft` → `published` → `archived`
-
-Published titles and published items are the only records shown to customers.
-
-New titles and items are created as drafts. Deletes are deliberately restricted when dependent records or customer history exist; archive is the safe lifecycle operation for content that has already been used.
-
-### Assigning the first admin
-
-Set the role in Supabase Auth application metadata, not user metadata:
-
-```sql
-UPDATE auth.users
-SET raw_app_meta_data =
-  jsonb_set(
-    COALESCE(raw_app_meta_data, '{}'::jsonb),
-    '{role}',
-    '"admin"'::jsonb
-  )
-WHERE email = 'YOUR_EMAIL_HERE';
-```
-
-Sign out and sign back in after changing the role so the new JWT contains the updated metadata.
-
-## Local setup
-
-Create `.env.local` from `.env.example` and provide the Supabase project URL and publishable key.
-
-Then run:
-
-```bash
-npm install
-npm run dev
-```
-
-## Database changes
-
-Production database changes are tracked in `supabase/migrations/`.
-
-Do not put service-role or secret Supabase keys in browser-exposed environment variables.
+All scheduled construction remains paused. Build future business features from the accepted LOXADA v1.0 and the user's later decisions.
